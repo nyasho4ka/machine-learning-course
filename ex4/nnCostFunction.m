@@ -30,44 +30,30 @@ J = 0;
 Theta1_grad = zeros(size(Theta1));
 Theta2_grad = zeros(size(Theta2));
 
-h1 = sigmoid([ones(m, 1) X] * Theta1');
-h2 = sigmoid([ones(m, 1) h1] * Theta2');
+X = [ones(m, 1), X];
 
-y_unrolled = zeros(size(y, 1), num_labels);
+a_1 = X;
+z_2 = a_1 * Theta1';
+a_2 = sigmoid(z_2);
+a_2 = [ones(size(a_2, 1), 1), a_2];
+z_3 = a_2 * Theta2';
+a_3 = sigmoid(z_3);
 
-for i = 1:size(y_unrolled, 1)
-    y_unrolled(i, y(i)) = 1;
-end
+h_x = a_3;
+
+y_unrolled = [1:num_labels] == y;
 
 for i = 1:num_labels
-    J = J - (y_unrolled(:, i)'*log(h2(:, i)) + (1 - y_unrolled(:, i))'*log(1 - h2(:, i)))/m;
+    J = J - (y_unrolled(:, i)'*log(h_x(:, i)) + (1 - y_unrolled(:, i))'*log(1 - h_x(:, i)))/m;
 end
 
 J = J + lambda * (sum(sum(Theta1(:, 2:end) .^ 2)) + sum(sum(Theta2(:, 2:end) .^ 2))) /(2 * m);
 
+delta_3 = a_3 - y_unrolled;
+delta_2 = (delta_3 * Theta2(:, 2:end)) .* sigmoidGradient(z_2);
 
-for t = 1:m
-    a_1 = [1; X(t, :)'];
-    z_2 = Theta1 * a_1;
-    a_2 = [1; sigmoid(z_2)];
-    z_3 = Theta2 * a_2;
-    a_3 = sigmoid(z_3);
-
-    error_3 = (a_3 - y_unrolled(t, :)')
-
-    error_2 = Theta2' * error_3 .* sigmoidGradient([1; z_2]);
-    error_2 = error_2(2:end);
-
-    disp(size(Theta2_grad));
-    disp(size(error_3 * a_2'));
-    disp(size(Theta1_grad));
-    disp(size(error_2 * a_1'));
-
-    Theta2_grad = Theta2_grad +  error_3 * a_2';
-    Theta1_grad = Theta1_grad + error_2 * a_1';
-
-Theta1_grad = Theta1_grad / m;
-Theta2_grad = Theta2_grad / m;
+Theta1_grad = (1/m) * ((delta_2' * a_1) + lambda * [zeros(size(Theta1, 1), 1) Theta1(:, 2:end)]);
+Theta2_grad = (1/m) * ((delta_3' * a_2) + lambda * [zeros(size(Theta2, 1), 1) Theta2(:, 2:end)]);
 
 % ====================== YOUR CODE HERE ======================
 % Instructions: You should complete the code by working through the
